@@ -6,7 +6,7 @@ Simple HTTP/S file download library supporting multi parts connections, based on
 Download from nuget or build from source, this package designed using .Net framework 4.6.1 but you can change to any framework you need.
 
 ## Usage
-```
+``` C#
 UrlDownloadSettings settings = new UrlDownloadSettings()
 {
     //download directory
