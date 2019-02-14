@@ -1,6 +1,6 @@
 # UrlDownloadLib
 
-Simple HTTP/S file download library supporting multi parts connections.
+Simple HTTP/S file download library supporting multi parts connections, based on Range Http Header
 
 ## Installation
 Download from nuget or build from source, this package designed using .Net framework 4.6.1 but you can change to any framework you need.
