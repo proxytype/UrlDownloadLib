@@ -3,8 +3,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-
-
 using UrlDownloadLib.Model;
 
 namespace UrlDownloadLib.Logic
@@ -91,7 +89,6 @@ namespace UrlDownloadLib.Logic
                 downloaderFile.tempDirectory = Path.Combine(settings.downloadDirectory, Guid.NewGuid().ToString());
                 Directory.CreateDirectory(downloaderFile.tempDirectory);
 
-
                 Parallel.For(0, downloaderFile.numberOfWorkers, index => {
 
                     long startIndex = index * division;
@@ -123,6 +120,7 @@ namespace UrlDownloadLib.Logic
             {
                 //handle exception
                 downloaderFile.exception = ex.ToString();
+                downloaderFile.downloaderEvent = URL_DOWNLOAD_EVENT_STATUS.ERROR;
             }
             finally
             {
@@ -155,12 +153,16 @@ namespace UrlDownloadLib.Logic
                         downloaderFile.localFilename = splitter[splitter.Length - 1];
                     }
                 }
-               
+
 
                 //check if server support range
                 if (response.Headers[HEADER_ACCEPT_RANGE].ToString() == ACCEPT_RANGE)
                 {
                     downloaderFile.isRangable = true;
+                }
+                else {
+                    //not accept range, one worker only
+                    downloaderFile.numberOfWorkers = 1;
                 }
 
                 //getting the file size
@@ -206,34 +208,9 @@ namespace UrlDownloadLib.Logic
             {
                 HttpWebRequest request = WebRequest.CreateHttp(downloaderFile.url);
 
-                //if filename already exists localy
-                if (File.Exists(downloadPart.partFileName))
-                {
-                    //if the server support range
-                    if (downloaderFile.isRangable && settings.downloadAutoResume)
-                    {
-                        //reading local files
-                        localStream = File.Open(downloadPart.partFileName, FileMode.Open, FileAccess.Write);
-                        startIndex = localStream.Length - 1;
-
-                        //go to end of file before adding new data
-                        localStream.Seek(startIndex, SeekOrigin.Begin);
-                    }
-                    else
-                    {
-                        //delete the local file, range or resuming is forbidden
-                        File.Delete(downloadPart.partFileName);
-                        //redownload the entire file from beginning
-                        localStream = File.Create(downloadPart.partFileName);
-                    }
-                }
-                else
-                {
-                    //create new local file
-                    localStream = File.Create(downloadPart.partFileName);
-                }
-
-                request.AddRange((int)startIndex, (int)endIndex);
+                localStream = File.Create(downloadPart.partFileName);
+               
+                request.AddRange((int)downloadPart.startIndex, downloadPart.endIndex);
                 response = request.GetResponse();
                 remoteStream = response.GetResponseStream();
 
@@ -245,17 +222,13 @@ namespace UrlDownloadLib.Logic
 
                     //write new data to local stream
                     localStream.Write(buffer, 0, bytesRead);
-                    
-
 
                     downloadPart.currentIndex += bytesRead;
 
                     PartProgressEvent(downloadPart);
 
                     //if download complete or aborted by the user, exit do
-                    if (downloadPart.currentIndex >= endIndex 
-                        || downloaderFile.downloaderEvent == URL_DOWNLOAD_EVENT_STATUS.STOP 
-                        || downloaderFile.downloaderEvent == URL_DOWNLOAD_EVENT_STATUS.PAUSE
+                    if (downloadPart.currentIndex >= endIndex || downloaderFile.downloaderEvent == URL_DOWNLOAD_EVENT_STATUS.STOP 
                         )
                     {
                         if (downloadPart.currentIndex >= endIndex)

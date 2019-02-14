@@ -11,9 +11,7 @@ namespace UrlDownloadLib.Model
         START,
         DOWNLOADING,
         COMPLETE,
-        RESUMING,
         STOP,
-        PAUSE,
         ERROR
     }
 }

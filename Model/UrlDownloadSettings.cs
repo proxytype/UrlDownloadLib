@@ -17,6 +17,6 @@ namespace UrlDownloadLib.Model
         public int downloadBufferSize = DEFAULT_BUFFER_SIZE;
         public int downloadReportInterval = DEFAULT_TIMER_INTERVAL;
         public int downloadTimeout = DEFAULT_TIMEOUT;
-        public bool downloadAutoResume = DEFAULT_AUTO_RESUME;
+
     }
 }
